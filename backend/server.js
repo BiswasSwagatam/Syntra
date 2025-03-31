@@ -7,8 +7,7 @@ import cors from "cors";
 import dotenv from "dotenv";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import sqlite3 from "sqlite3";
-import { open } from "sqlite";
+import mongoose from "mongoose";
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -41,34 +40,26 @@ const upload = multer({ storage: storage });
 
 app.use(cors());
 
-// Initialize SQLite database
-const dbPromise = open({
-  filename: "./database.db",
-  driver: sqlite3.Database,
+// MongoDB setup
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
 });
 
-async function initializeDatabase() {
-  try {
-    const db = await dbPromise;
-    await db.exec(`
-      CREATE TABLE IF NOT EXISTS users (
-        username TEXT PRIMARY KEY,
-        password TEXT,
-        role TEXT
-      );
-      CREATE TABLE IF NOT EXISTS files (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        fileName TEXT,
-        uploader TEXT,
-        uploadedAt TEXT
-      );
-    `);
-  } catch (error) {
-    console.error("Database initialization error:", error);
-    process.exit(1); // Exit if database initialization fails
-  }
-}
-initializeDatabase();
+const userSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true },
+  password: { type: String, required: true },
+  role: { type: String, required: true },
+});
+
+const fileSchema = new mongoose.Schema({
+  fileName: { type: String, required: true },
+  uploader: { type: String, required: true },
+  uploadedAt: { type: Date, default: Date.now },
+});
+
+const User = mongoose.model("User", userSchema);
+const File = mongoose.model("File", fileSchema);
 
 // Middleware to verify JWT token
 const verifyToken = (req, res, next) => {
@@ -103,11 +94,8 @@ app.post("/register", async (req, res) => {
   try {
     const { username, password, role } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
-    const db = await dbPromise;
-    await db.run(
-      "INSERT INTO users (username, password, role) VALUES (?, ?, ?)",
-      [username, hashedPassword, role]
-    );
+    const user = new User({ username, password: hashedPassword, role });
+    await user.save();
     res.send("User registered");
   } catch (error) {
     console.error("Registration error:", error);
@@ -119,10 +107,7 @@ app.post("/register", async (req, res) => {
 app.post("/login", async (req, res) => {
   try {
     const { username, password } = req.body;
-    const db = await dbPromise;
-    const user = await db.get("SELECT * FROM users WHERE username = ?", [
-      username,
-    ]);
+    const user = await User.findOne({ username });
     if (!user) return res.status(400).json({ error: "User not found" });
 
     const validPassword = await bcrypt.compare(password, user.password);
@@ -190,11 +175,11 @@ app.post(
 
       await fs.promises.unlink(filePath);
 
-      const db = await dbPromise;
-      await db.run(
-        "INSERT INTO files (fileName, uploader, uploadedAt) VALUES (?, ?, ?)",
-        [req.file.originalname, req.user.username, new Date().toISOString()]
-      );
+      const file = new File({
+        fileName: req.file.originalname,
+        uploader: req.user.username,
+      });
+      await file.save();
     } catch (error) {
       console.error("Upload error:", error);
       res.status(500).json({ error: "Error processing file" });
@@ -213,11 +198,8 @@ app.delete(
   async (req, res) => {
     try {
       const fileName = req.params.fileName;
-      const db = await dbPromise;
-      const result = await db.run("DELETE FROM files WHERE fileName = ?", [
-        fileName,
-      ]);
-      if (result.changes === 0) {
+      const result = await File.deleteOne({ fileName });
+      if (result.deletedCount === 0) {
         return res.status(404).json({ error: "File not found" });
       }
       res.send("File deleted");
@@ -235,8 +217,7 @@ app.get(
   checkRole(["CEO", "Manager", "Admin", "Worker"]),
   async (req, res) => {
     try {
-      const db = await dbPromise;
-      const files = await db.all("SELECT * FROM files");
+      const files = await File.find();
       res.json(files);
     } catch (error) {
       console.error("File view error:", error);
