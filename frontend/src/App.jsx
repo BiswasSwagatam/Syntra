@@ -29,7 +29,7 @@ function App() {
 
   const fetchFiles = async () => {
     try {
-      const response = await axios.get("http://localhost:3000/files", {
+      const response = await axios.get("https://syntra.onrender.com/files", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -47,7 +47,7 @@ function App() {
 
   const handleDelete = async (fileName) => {
     try {
-      await axios.delete(`http://localhost:3000/files/${fileName}`, {
+      await axios.delete(`https://syntra.onrender.com/files/${fileName}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -83,7 +83,7 @@ function App() {
 
     try {
       const response = await axios.post(
-        `http://localhost:3000/upload?question=${encodeURIComponent(question)}`,
+        `https://syntra.onrender.com/upload?question=${encodeURIComponent(question)}`,
         formData,
         {
           headers: {
