@@ -1,0 +1,6 @@
+{
+  "routes": [
+    { "type": "rewrite", "src": "/(.*)", "dest": "/index.html" },
+    { "type": "mime", "src": "\\.css$", "headers": { "Content-Type": "text/css" } }
+  ]
+}
