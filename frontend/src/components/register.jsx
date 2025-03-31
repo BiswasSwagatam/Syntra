@@ -12,7 +12,7 @@ function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await axios.post("http://localhost:3000/register", {
+      await axios.post("https://syntra.onrender.com/register", {
         username,
         password,
         role,
