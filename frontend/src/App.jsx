@@ -184,7 +184,7 @@ function App() {
                       Please wait, AI is processing your request
                     </p>
                   </div>
-          }
+          )}
         />
       ) : (
         <Route path="/dashboard" element={<Navigate to="/login" replace />} />
