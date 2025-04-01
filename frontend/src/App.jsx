@@ -9,6 +9,10 @@ import {
 } from "react-router-dom";
 import Login from "./components/login";
 import Register from "./components/register";
+import FileList from "./components/fileList";
+import QuestionAnswer from "./components/questionAnswer";
+import UploadForm from "./components/uploadForm";
+import HomePage from "./components/homePage";
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem("token"));
@@ -18,7 +22,6 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [files, setFiles] = useState([]);
   const [error, setError] = useState("");
-
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -83,7 +86,9 @@ function App() {
 
     try {
       const response = await axios.post(
-        `https://syntra.onrender.com/upload?question=${encodeURIComponent(question)}`,
+        `https://syntra.onrender.com/upload?question=${encodeURIComponent(
+          question
+        )}`,
         formData,
         {
           headers: {
@@ -137,99 +142,53 @@ function App() {
     navigate("/login");
   };
 
-  if (!token) {
-    return (
-      <Routes>
-        <Route path="/login" element={<Login setToken={setToken} />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gray-100 p-4">
-      <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl mb-5 drop-shadow-lg font-semibold text-gray-800">
-            AI-Powered Document Assistant ✨
-            <p className="text-gray-600 text-sm">
-              Upload and ask questions about your documents
-            </p>
-          </h1>
-          <button
-            onClick={handleLogout}
-            className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded"
-          >
-            Logout
-          </button>
-        </div>
-        {error && <p className="text-red-500 mb-4">{error}</p>}
-        <form onSubmit={handleSubmit} className="mb-6">
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700">
-              Upload a document (.pdf or .txt):
-            </label>
-            <input
-              type="file"
-              accept=".pdf, .txt"
-              onChange={handleFileChange}
-              className="mt-1 p-2 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-            />
-          </div>
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700">
-              Ask a question:
-            </label>
-            <input
-              type="text"
-              value={question}
-              onChange={handleQuestionChange}
-              placeholder="Enter your question here"
-              className="mt-1 p-2 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded"
-          >
-            Ask AI
-          </button>
-        </form>
-        {isLoading && <p className="text-gray-600 italic">Loading...</p>}
-        {answer && (
-          <div className="mt-4 p-4 bg-gray-50 rounded-md">
-            <h2 className="text-lg font-semibold text-gray-800">AI Answer:</h2>
-            <p className="text-gray-700">{answer}</p>
-          </div>
-        )}
-        <div className="mt-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-2">
-            Uploaded Files:
-          </h2>
-          <ul>
-            {files.map((file) => (
-              <li
-                key={file.id}
-                className="flex items-center justify-between py-2 border-b border-gray-200"
-              >
-                <div>
-                  {file.fileName} - Uploaded by: {file.uploader} - Uploaded at:{" "}
-                  {file.uploadedAt}
+    <Routes>
+      <Route path="/" element={<HomePage token={token} />} />
+      <Route path="/login" element={<Login setToken={setToken} />} />
+      <Route path="/register" element={<Register />} />
+      {token ? (
+        <Route
+          path="/dashboard"
+          element={
+            <div className="min-h-screen bg-gray-100 p-4">
+              <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h1 className="text-3xl mb-5 drop-shadow-lg font-semibold text-gray-800">
+                    AI-Powered Document Assistant ✨
+                    <p className="text-gray-600 text-sm">
+                      Upload and ask questions about your documents
+                    </p>
+                  </h1>
+                  <button
+                    onClick={handleLogout}
+                    className="bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded"
+                  >
+                    Logout
+                  </button>
                 </div>
-                <button
-                  onClick={() => handleDelete(file.fileName)}
-                  className="bg-red-500 hover:bg-red-600 text-white font-semibold py-1 px-2 rounded"
-                >
-                  Delete
-                </button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-    </div>
+                {error && <p className="text-red-500 mb-4">{error}</p>}
+                <UploadForm
+                  selectedFile={selectedFile}
+                  question={question}
+                  isLoading={isLoading}
+                  handleSubmit={handleSubmit}
+                  handleFileChange={handleFileChange}
+                  handleQuestionChange={handleQuestionChange}
+                />
+                {isLoading && (
+                  <p className="text-gray-600 italic">Loading...</p>
+                )}
+                <QuestionAnswer answer={answer} />
+                <FileList files={files} handleDelete={handleDelete} />
+              </div>
+            </div>
+          }
+        />
+      ) : (
+        <Route path="/dashboard" element={<Navigate to="/login" replace />} />
+      )}
+    </Routes>
   );
 }
 
