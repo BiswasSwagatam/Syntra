@@ -175,11 +175,29 @@ app.post(
 
       await fs.promises.unlink(filePath);
 
-      const file = new File({
+      // const file = new File({
+      //   fileName: req.file.originalname,
+      //   uploader: req.user.username,
+      // });
+      // await file.save();
+      // Check if file with same name and uploader exists
+      const existingFile = await File.findOne({
         fileName: req.file.originalname,
         uploader: req.user.username,
       });
-      await file.save();
+
+      if (existingFile) {
+        // Update existing file's uploadedAt timestamp
+        existingFile.uploadedAt = Date.now();
+        await existingFile.save();
+      } else {
+        // Create new file entry
+        const file = new File({
+          fileName: req.file.originalname,
+          uploader: req.user.username,
+        });
+        await file.save();
+      }
     } catch (error) {
       console.error("Upload error:", error);
       res.status(500).json({ error: "Error processing file" });
