@@ -13,6 +13,7 @@ import FileList from "./components/fileList";
 import QuestionAnswer from "./components/questionAnswer";
 import UploadForm from "./components/uploadForm";
 import HomePage from "./components/homePage";
+import { ClipLoader } from "react-spinners";
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem("token"));
@@ -177,12 +178,12 @@ function App() {
                   handleQuestionChange={handleQuestionChange}
                 />
                 {isLoading && (
-                  <p className="text-gray-600 italic">Loading...</p>
-                )}
-                <QuestionAnswer answer={answer} />
-                <FileList files={files} handleDelete={handleDelete} />
-              </div>
-            </div>
+                  <div className="flex flex-col justify-center items-center mt-4">
+                    <ClipLoader color="#1A56DB" size={30} />
+                    <p className="italic text-gray-600">
+                      Please wait, AI is processing your request
+                    </p>
+                  </div>
           }
         />
       ) : (
